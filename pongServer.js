@@ -95,10 +95,10 @@ setInterval(function(){
 
 function checkWinner(paddles, ball){
   for (i in paddles) {
-    if(paddles[i].side == "left" && ball.position.x-(ball.diameter/2) < paddles[i].position.x){
+    if(paddles[i].side == "left" && ball.position.x < paddles[i].position.x){
       return "right";
     }
-    else if (paddles[i].side == "right" && ball.position.x +(ball.diameter/2) > paddles[i].position.x + paddles[i].width) {
+    else if (paddles[i].side == "right" && ball.position.x > paddles[i].position.x + paddles[i].width) {
       return "left";
     }
   }
@@ -106,18 +106,17 @@ function checkWinner(paddles, ball){
 }
 
 function CollisionDetector(paddle, ball){
-  if(paddle.position.y < ball.position.y && paddle.position.y + 100 > ball.position.y)
-  {
-    if(paddle.side == "left" && paddle.position.x + paddle.width >= ball.position.x - (ball.diameter/2) )
-    {
-      var angle = valueFromRange(ball.position.y, paddle.position.y, paddle.position.y + paddle.height, -1/4*Math.PI, 1/4*Math.PI);
-      ball.bounce(angle);
+    var ballContactPointY = ContactPointDetector(paddle, ball);
+
+    if (paddle.position.y <= ballContactPointY && paddle.position.y + paddle.height >= ballContactPointY) {
+        if (paddle.side == "left" && paddle.position.x + paddle.width >= ball.position.x - (ball.diameter / 2)) {
+            var angle = valueFromRange(ballContactPointY, paddle.position.y, paddle.position.y + paddle.height, -1 / 4 * Math.PI, 1 / 4 * Math.PI);
+            ball.bounce(angle);
+        } else if (paddle.side == "right" && paddle.position.x <= ball.position.x + (ball.diameter / 2)) {
+            var angle = valueFromRange(ballContactPointY, paddle.position.y, paddle.position.y + paddle.height, 5 / 4 * Math.PI, 3 / 4 * Math.PI);
+            ball.bounce(angle);
+        }
     }
-    if(paddle.side == "right" && paddle.position.x <= ball.position.x + (ball.diameter/2)){
-      var angle = valueFromRange(ball.position.y, paddle.position.y, paddle.position.y + paddle.height, 5/4*Math.PI, 3/4*Math.PI);
-      ball.bounce(angle);
-    }
-  }
 }
 
 function valueFromRange(value, low1, high1, low2, high2) {
@@ -185,4 +184,30 @@ Ball.prototype.update = function () {
 
 Ball.prototype.bounce = function(angle){
   this.angle = angle*((Math.random()/10)+1);
+}
+
+/**
+ * @param paddle
+ * @param ball
+ * @return {number}
+ */
+function ContactPointDetector(paddle, ball) {
+    switch (paddle.side) {
+        case "left":
+            if (Math.hypot(paddle.position.x + paddle.width - ball.position.x, paddle.position.y - ball.position.y) <= ball.diameter / 2) {
+                return paddle.position.y;
+            } else if (Math.hypot(paddle.position.x + paddle.width - ball.position.x, paddle.position.y + paddle.height - ball.position.y) <= ball.diameter / 2) {
+                return (paddle.position.y + paddle.height);
+            }
+            break;
+        case "right":
+            if (Math.hypot(paddle.position.x - ball.position.x, paddle.position.y - ball.position.y) <= ball.diameter / 2) {
+                return paddle.position.y;
+            } else if (Math.hypot(paddle.position.x - ball.position.x, paddle.position.y + paddle.height - ball.position.y) <= ball.diameter / 2) {
+                return (paddle.position.y + paddle.height);
+            }
+            break;
+    }
+    return ball.position.y;
+
 }
